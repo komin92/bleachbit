@@ -958,10 +958,28 @@ class GUI(Gtk.ApplicationWindow):
 
     def on_show(self, widget):
         # restore window position, size and state
-        if options.has_option("window_x") and options.has_option("window_y"):
-            self.move(options.get("window_x"), options.get("window_y"))
+        screen = self.get_screen()
+        screen_x = screen.get_width()
+        screen_y = screen.get_height()
+        logger.debug('Screen has dimensions (%d, %d).' % (screen_x, screen_y))
+
+        def get_int(opt_name):
+            if options.has_option(opt_name):
+                return options.get(opt_name)
+            return None
+        win_x = get_int("window_x")
+        win_y = get_int("window_y")
+        if win_x and win_y:
+            win_xy = '(%d, %d)' % (win_x, win_y)
+            if win_x < screen.get_width() and win_y < screen.height():
+                logger.debug('Restoring window to saved position %s.' % win_xy)
+                self.move(win_x, win_y)
+            else:
+                logger.debug(
+                    'Screen too small to restore saved position %s.' % win_xy)
         if options.has_option("window_width") and options.has_option("window_height"):
-            self.resize(options.get("window_width"), options.get("window_height"))
+            self.resize(options.get("window_width"),
+                        options.get("window_height"))
         if options.get("window_fullscreen"):
             self.fullscreen()
         elif options.get("window_maximized"):
