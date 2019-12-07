@@ -236,7 +236,10 @@ def delete_updates():
 
 def detect_registry_key(parent_key):
     """Detect whether registry key exists"""
-    parent_key = str(parent_key)  # Unicode to byte string
+    try:
+        parent_key = str(parent_key)  # Unicode to byte string
+    except UnicodeEncodeError:
+        return False
     (hive, parent_sub_key) = split_registry_key(parent_key)
     hkey = None
     try:
@@ -422,11 +425,10 @@ def get_recycle_bin():
     for item in h:
         path = h.GetDisplayNameOf(item, shellcon.SHGDN_FORPARSING)
         if os.path.isdir(path):
-            if not is_link(path):
-                # Return the contents of a normal directory, but do
-                # not recurse Windows symlinks in the Recycle Bin.
-                for child in FileUtilities.children_in_directory(path, True):
-                    yield child
+            # Return the contents of a normal directory, but do
+            # not recurse Windows symlinks in the Recycle Bin.
+            for child in FileUtilities.children_in_directory(path, True):
+                yield child
         yield path
 
 
@@ -437,14 +439,17 @@ def get_windows_version():
     return Decimal(vstr)
 
 
-def is_link(path):
+def is_junction(path):
     """Check whether the path is a link
 
     On Python 2.7 the function os.path.islink() always returns False,
     so this is needed
     """
     FILE_ATTRIBUTE_REPARSE_POINT = 0x400
-    attr = windll.kernel32.GetFileAttributesW(unicode(path))
+    if isinstance(path, unicode):
+        attr = windll.kernel32.GetFileAttributesW(path)
+    else:
+        attr = windll.kernel32.GetFileAttributesA(path)
     return bool(attr & FILE_ATTRIBUTE_REPARSE_POINT)
 
 
