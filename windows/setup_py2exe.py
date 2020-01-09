@@ -523,7 +523,14 @@ if '__main__' == __name__:
     BB_VER = bleachbit.APP_VERSION
     build_number = os.getenv('APPVEYOR_BUILD_NUMBER')
     if build_number:
+        # In case of routine CI build, record the build number in the filename.
         BB_VER = '%s.%s' % (BB_VER, build_number)
+    tag_name = os.getenv('APPVEYOR_REPO_TAG_NAME')
+    if tag_name:
+        # In case of a tagged release, simplify the version number used for filenames.
+        # strip off the leading v like 'v4.0' to '4.0'
+        BB_VER = tag_name[1:]
+
     logger.info('BleachBit version ' + BB_VER)
 
     environment_check()
